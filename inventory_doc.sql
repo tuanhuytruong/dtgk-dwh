@@ -10,9 +10,9 @@ inventory_by_location_pre AS (
     , SUM(stock_qty) stock_qty
     , SUM(stock_value) stock_value
     FROM `dwh.inventory_by_location` i
-    LEFT JOIN dwh.dim_location d ON i.location = d.location
+    LEFT JOIN dwh.dim_location d ON i.location_id = d.id
     WHERE 1 = 1
-    AND date = DATE_SUB(CURRENT_DATE('+7'), INTERVAL 1 DAY)
+    AND date = DATE_SUB(CURRENT_DATE('+7'), INTERVAL 0 DAY)
     GROUP BY ROLLUP (1,2,3,4,5) 
 )
 ,
@@ -62,7 +62,7 @@ inventory_by_location AS (
     , stock_value
     FROM inventory_by_location_pre i
     WHERE 1 = 1
-    AND inventory_level3 IS NULL
+  
 )
 ,
 
@@ -127,7 +127,7 @@ gross_profit AS (
     , total_profit
     FROM gross_profit_pre g
     WHERE 1 = 1
-    AND inventory_level3 IS NULL
+    # AND inventory_level3 IS NULL
 )
 
     SELECT
