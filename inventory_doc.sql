@@ -1,10 +1,13 @@
 CREATE OR REPLACE TABLE dwh.inventory_doc AS
 WITH 
-inventory_by_location_pre AS (
+inventory_by_location AS (
     SELECT
-    sku
-    ,'all_location' inventory_level0
-    , i.location
+    i.location_id
+    , sku
+    , SPLIT(cat_tree,'>>')[SAFE_OFFSET(0)] cat1
+    , SPLIT(cat_tree,'>>')[SAFE_OFFSET(1)] cat2
+    , SPLIT(cat_tree,'>>')[SAFE_OFFSET(2)] cat3
+    , d.location
     , d.inventory_level2
     , d.inventory_level3
     , SUM(stock_qty) stock_qty
@@ -13,138 +16,62 @@ inventory_by_location_pre AS (
     LEFT JOIN dwh.dim_location d ON i.location_id = d.id
     WHERE 1 = 1
     AND date = DATE_SUB(CURRENT_DATE('+7'), INTERVAL 0 DAY)
-    GROUP BY ROLLUP (1,2,3,4,5) 
+    GROUP BY 1,2,3,4,5,6,7,8
 )
 ,
 
-inventory_by_location AS (
+gross_profit_30day AS (
     SELECT
-    0 level
-    , inventory_level0 inventory_level
+    location_id
     , sku
-    , stock_qty
-    , stock_value
-    FROM inventory_by_location_pre i
-    WHERE 1 = 1
-    AND location IS NULL
-    AND inventory_level2 IS NULL
-    AND inventory_level3 IS NULL
-
-    UNION ALL
-    SELECT
-    1
-    , location
-    , sku
-    , stock_qty
-    , stock_value
-    FROM inventory_by_location_pre i
-    WHERE 1 = 1
-    AND inventory_level2 IS NULL
-    AND inventory_level3 IS NULL
-
-    UNION ALL
-    SELECT
-    2
-    , inventory_level2
-    , sku
-    , stock_qty
-    , stock_value
-    FROM inventory_by_location_pre i
-    WHERE 1 = 1
-    AND inventory_level3 IS NULL
-
-    UNION ALL
-    SELECT
-    3
-    , inventory_level3
-    , sku
-    , stock_qty
-    , stock_value
-    FROM inventory_by_location_pre i
-    WHERE 1 = 1
-  
-)
-,
-
-gross_profit_pre AS (
-    SELECT
-    sku
-    , 'all_location' inventory_level0
-    , location
-    , inventory_level2
-    , inventory_level3
     , SUM(qty) qty
     , SUM(total_profit) total_profit
     FROM `dtgk-262108.dwh.gross_profit`
     WHERE 1 = 1
     AND date >= DATE_SUB(CURRENT_DATE('+7'), INTERVAL 30 DAY)
-    GROUP BY ROLLUP (1,2,3,4,5)
+    GROUP BY 1,2
 )
 ,
 
-gross_profit AS (
+gross_profit_14day AS (
     SELECT
-    0 level
-    , inventory_level0 inventory_level
+    location_id
     , sku
-    , qty
-    , total_profit
-    FROM gross_profit_pre g
+    , SUM(qty) qty
+    , SUM(total_profit) total_profit
+    FROM `dtgk-262108.dwh.gross_profit`
     WHERE 1 = 1
-    AND location IS NULL
-    AND inventory_level2 IS NULL
-    AND inventory_level3 IS NULL
-
-    UNION ALL
-    SELECT
-    1
-    , location
-    , sku
-    , qty
-    , total_profit
-    FROM gross_profit_pre g
-    WHERE 1 = 1
-    AND inventory_level2 IS NULL
-    AND inventory_level3 IS NULL
-
-    UNION ALL
-    SELECT
-    2
-    , inventory_level2
-    , sku
-    , qty
-    , total_profit
-    FROM gross_profit_pre g
-    WHERE 1 = 1
-    AND inventory_level3 IS NULL
-
-    UNION ALL
-    SELECT
-    3
-    , inventory_level3
-    , sku
-    , qty
-    , total_profit
-    FROM gross_profit_pre g
-    WHERE 1 = 1
-    # AND inventory_level3 IS NULL
+    AND date >= DATE_SUB(CURRENT_DATE('+7'), INTERVAL 14 DAY)
+    GROUP BY 1,2   
 )
 
+
+
     SELECT
-    i.level
-    , i.inventory_level
+    i.location_id
+    , i.location
+    , i.inventory_level2
+    , i.inventory_level3
+    , cat1
+    , cat2
+    , cat3
     , i.sku
     , stock_qty
     , stock_value
-    , SAFE_DIVIDE(stock_qty, qty) doc_qty
-    , SAFE_DIVIDE(stock_value, total_profit) doc_profit
+    , p.qty item_sold_14day
+    , SAFE_DIVIDE(stock_qty, p.qty/14) doc_qty_14day
+    , SAFE_DIVIDE(stock_value, p.total_profit/14) doc_profit_14day
+    , p2.qty item_sold_30day
+    , SAFE_DIVIDE(stock_qty, p2.qty/30) doc_qty_30day
+    , SAFE_DIVIDE(stock_value, p2.total_profit/30) doc_profit_30day
     FROM inventory_by_location i
-    LEFT JOIN gross_profit p ON i.level = p.level
-                            AND i.sku = p.sku
-                            AND i.inventory_level = p.inventory_level
+    LEFT JOIN gross_profit_14day p ON i.location_id = p.location_id
+                                  AND i.sku = p.sku
+    LEFT JOIN gross_profit_30day p2 ON i.location_id = p2.location_id
+                                   AND i.sku = p2.sku
+
+                           
                             
     WHERE 1 = 1 
-    AND i.sku IS NOT NULL
-    AND i.level IS NOT NULL
-    AND i.inventory_level  IS NOT NULL
-    
+    AND i.location_id IS NOT NULL
+  
