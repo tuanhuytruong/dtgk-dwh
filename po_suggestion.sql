@@ -26,7 +26,7 @@ inventory_by_location AS (
      FROM `dwh.inventory_by_location` i
     LEFT JOIN dwh.dim_location d ON i.location_id = d.id
     WHERE 1 = 1
-    AND date = DATE_SUB(CURRENT_DATE('+7'), INTERVAL 1 DAY)
+    AND date = DATE_SUB(CURRENT_DATE('+7'), INTERVAL 0 DAY)
     GROUP BY 1,2,3,4,5,6,7,8,9,10
 )
 ,
