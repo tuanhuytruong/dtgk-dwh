@@ -1,3 +1,4 @@
+CREATE OR REPLACE TABLE dwh.dim_product AS 
 SELECT
 sku
 , product_name
