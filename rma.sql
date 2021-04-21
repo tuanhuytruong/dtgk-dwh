@@ -10,7 +10,7 @@ SELECT
 , DATE_DIFF(DATE(i.created_at), DATE(i2.created_at), DAY ) num_return_day
 , i2.branch buy_branch
 , r.branch return_branch
-
+, r.sku
 , i.note 
 FROM dwh.invoice_detail i
 JOIN dwh.return_detail r ON i.note = r.note AND i.sku = r.sku
