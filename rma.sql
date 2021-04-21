@@ -3,6 +3,8 @@ SELECT
  r.transaction_id buy_transaction_id
 , i.transaction_id return_transaction_id
 , r.return_id
+, i2.staff_name buy_staff_name
+, r.staff_name return_staff_name
 , DATE(i2.created_at) buy_date
 , DATE(i.created_at) return_date
 , DATE_DIFF(DATE(i.created_at), DATE(i2.created_at), DAY ) num_return_day
