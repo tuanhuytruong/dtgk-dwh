@@ -47,20 +47,20 @@ SELECT
     , transaction_id_relink
     , staff_name_relink
     , created_at_relink
-    , sell_qty
-    , sell_amount
-    , return_qty
-    , return_amount
-    , qty_edit
-    , amount_edit
-    , IF(order_pk > 0, 1, 0) is_order_include_pk
-    , IF(sell_exc_pk > 3000000, 1, 0) is_over_3m_exc_pk
-    , IF(sell_amount > 3000000, 1, 0) is_over_3m_inc_pk
-    , order_pk
-    , order_bh
-    , order_delivery
+    , SUM(IF(transaction_id != transaction_id_relink, 0 ,sell_qty)) sell_qty
+    , SUM(IF(transaction_id != transaction_id_relink, 0 ,sell_amount)) sell_amount
+    , SUM(IF(transaction_id != transaction_id_relink, 0 ,return_qty)) return_qty
+    , SUM(IF(transaction_id != transaction_id_relink, 0 ,return_amount)) return_amount
+    , SUM(IF(transaction_id != transaction_id_relink, 0 ,qty_edit)) qty_edit
+    , SUM(IF(transaction_id != transaction_id_relink, 0 ,amount_edit)) amount_edit
+    , SUM(IF(transaction_id != transaction_id_relink, 0, IF(order_pk > 0, 1, 0))) is_order_include_pk
+    , SUM(IF(transaction_id != transaction_id_relink, 0, IF(sell_exc_pk > 3000000, 1, 0))) is_over_3m_exc_pk
+    , SUM(IF(transaction_id != transaction_id_relink, 0, IF(sell_amount > 3000000, 1, 0))) is_over_3m_inc_pk
+    , SUM(IF(transaction_id != transaction_id_relink, 0 ,order_pk))order_pk
+    , SUM(IF(transaction_id != transaction_id_relink, 0 ,order_bh))order_bh 
+    , SUM(IF(transaction_id != transaction_id_relink, 0 ,order_delivery)) order_delivery
     , department
 FROM order_metric
 WHERE 1 = 1
-GROUP BY 3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22
+GROUP BY 3,4,5,6,7,8,9,22
 
