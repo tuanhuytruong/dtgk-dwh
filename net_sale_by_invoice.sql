@@ -11,7 +11,8 @@ SELECT
     , i.staff_name
     , IFNULL(r.buy_transaction_id,i.transaction_id) transaction_id_relink
     , IFNULL(r.buy_staff_name,i.staff_name) staff_name_relink
-    , IFNULL(r.buy_date,i.created_at) created_at_relink
+    , IFNULL(DATE(r.buy_date),DATE(i.created_at)) created_at_relink
+    , hd.department
     , SUM(i.qty) sell_qty
     , SUM(i.amount) sell_amount
     , SUM(IF(is_pk = 1, 0, i.amount)) sell_exc_pk
@@ -28,14 +29,18 @@ LEFT JOIN dwh.return_detail rd ON i.transaction_id = rd.transaction_id
 LEFT JOIN dwh.rma r ON i.transaction_id = r.return_transaction_id
                    AND i.sku = r.sku
 LEFT JOIN dwh.dim_product dp ON i.sku = dp.sku
-GROUP BY 1,2,3,5,6,7,8,9,10
+LEFT JOIN dwh.hr_department hd ON IFNULL(r.buy_staff_name,i.staff_name) = hd.staff_name
+                              AND IFNULL(DATE(r.buy_date),DATE(i.created_at)) >= hd.from_date
+                              AND IFNULL(DATE(r.buy_date),DATE(i.created_at)) < hd.to_date
+GROUP BY 1,2,3,5,6,7,8,9,10,11
 )
 
 SELECT
-      branch
-    , transaction_id
-    , created_at
-    , return_id
+      
+      STRING_AGG(DISTINCT transaction_id, ',')  transaction_id
+    # , created_at
+    , STRING_AGG(DISTINCT return_id, ',')  return_id
+    , branch
     , customer_id
     , customer_name
     , staff_name
@@ -54,6 +59,8 @@ SELECT
     , order_pk
     , order_bh
     , order_delivery
+    , department
 FROM order_metric
 WHERE 1 = 1
+GROUP BY 3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22
 

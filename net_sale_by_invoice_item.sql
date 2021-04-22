@@ -18,7 +18,7 @@ SELECT
 , i.note
 , IFNULL(r.buy_transaction_id,i.transaction_id) transaction_id_relink
 , IFNULL(r.buy_staff_name,i.staff_name) staff_name_relink
-, r.buy_date created_at_relink
+, IFNULL(DATE(r.buy_date),DATE(i.created_at)) created_at_relink
 , dp.is_pk
 , dp.is_bh
 , dp.is_delivery
@@ -27,9 +27,13 @@ SELECT
 , dp.cat2
 , dp.cat3
 , dp.brand
+, hd.department
 FROM dwh.invoice_detail i
 LEFT JOIN dwh.return_detail rd ON i.transaction_id = rd.transaction_id
                              AND i.sku = rd.sku
 LEFT JOIN dwh.rma r ON i.transaction_id = r.return_transaction_id
                    AND i.sku = r.sku
 LEFT JOIN dwh.dim_product dp ON i.sku = dp.sku
+LEFT JOIN dwh.hr_department hd ON IFNULL(r.buy_staff_name,i.staff_name) = hd.staff_name
+                              AND IFNULL(DATE(r.buy_date),DATE(i.created_at)) >= hd.from_date
+                              AND IFNULL(DATE(r.buy_date),DATE(i.created_at)) < hd.to_date
