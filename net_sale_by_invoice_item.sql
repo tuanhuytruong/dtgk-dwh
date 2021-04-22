@@ -16,7 +16,7 @@ SELECT
 , IFNULL(i.qty,0) - IFNULL(rd.qty,0) qty_edit
 , IFNULL(i.amount,0) - IFNULL(rd.return_price * rd.qty,0) amount_edit
 , i.note
-, r.buy_transaction_id transaction_id_relink
+, IFNULL(r.buy_transaction_id,i.transaction_id) transaction_id_relink
 , IFNULL(r.buy_staff_name,i.staff_name) staff_name_relink
 , r.buy_date created_at_relink
 , dp.is_pk
