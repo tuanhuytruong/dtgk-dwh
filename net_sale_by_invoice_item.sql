@@ -13,11 +13,11 @@ SELECT
 , i.amount sell_amount
 , IFNULL(rd.qty,0) return_qty
 , IFNULL(rd.return_price * rd.qty,0) return_amount
-, IFNULL(i.qty - rd.qty,0) qty_edit
-, IFNULL(rd.selling_price * rd.qty - rd.return_price * rd.qty,0) amount_edit
+, IFNULL(i.qty,0) - IFNULL(rd.qty,0) qty_edit
+, IFNULL(i.amount,0) - IFNULL(rd.return_price * rd.qty,0) amount_edit
 , i.note
 , r.buy_transaction_id transaction_id_relink
-, r.buy_staff_name staff_name_relink
+, IFNULL(r.buy_staff_name,i.staff_name) staff_name_relink
 , r.buy_date created_at_relink
 , dp.is_pk
 , dp.is_bh
@@ -28,8 +28,8 @@ SELECT
 , dp.cat3
 , dp.brand
 FROM dwh.invoice_detail i
-LEFT JOIN dwh.return_detail rd ON i.transaction_id = rd.return_id
+LEFT JOIN dwh.return_detail rd ON i.transaction_id = rd.transaction_id
                              AND i.sku = rd.sku
-LEFT JOIN dwh.rma r ON i.transaction_id = r.buy_transaction_id
+LEFT JOIN dwh.rma r ON i.transaction_id = r.return_transaction_id
                    AND i.sku = r.sku
 LEFT JOIN dwh.dim_product dp ON i.sku = dp.sku
