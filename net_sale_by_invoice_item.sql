@@ -1,4 +1,6 @@
 CREATE OR REPLACE TABLE dwh.net_sale_by_invoice_item AS
+
+WITH final AS (
 SELECT 
   i.branch
 , i.transaction_id
@@ -37,3 +39,13 @@ LEFT JOIN dwh.dim_product dp ON i.sku = dp.sku
 LEFT JOIN dwh.hr_department hd ON IFNULL(r.buy_staff_name,i.staff_name) = hd.staff_name
                               AND IFNULL(DATE(r.buy_date),DATE(i.created_at)) >= hd.from_date
                               AND IFNULL(DATE(r.buy_date),DATE(i.created_at)) < hd.to_date
+)
+
+SELECT 
+    f.* EXCEPT(is_pk, is_delivery)
+    ,IF(is_pk = 0, 0, IF(amount_edit > 0,1,0)) is_pk
+    ,IF(SUM(IF(is_pk  =0, amount_edit, 0)) OVER (PARTITION BY transaction_id_relink) >3000000,1,0) is_amount_edit_exc_pk_over_3mil
+    , l.location
+    , l.id location_id
+FROM final f
+LEFT JOIN dwh.dim_location l ON f.branch = l.branch
